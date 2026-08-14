@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>마법의 소라고동</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg0:#0a0a0a;
+    --lcd-lightest:#9bbc0f;
+    --lcd-light:#8bac0f;
+    --lcd-dark:#306230;
+    --lcd-darkest:#0f380f;
+    --gold-lightest:#f5e6a8;
+    --gold-light:#e8c26a;
+    --gold-dark:#8a6a1f;
+    --gold-darkest:#4a3510;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+  body{
+    background:var(--bg0);
+    color:#6b7a5e;
+    font-family:'Press Start 2P',monospace;
+    min-height:100dvh;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:26px;
+    padding:24px 16px;
+    -webkit-tap-highlight-color:transparent;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+    touch-action:none;
+    position:relative;
+    overflow:hidden;
+  }
+  /* scanline / secret-terminal texture */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:repeating-linear-gradient(
+      to bottom, rgba(255,255,255,.02) 0px, rgba(255,255,255,.02) 1px,
+      transparent 1px, transparent 3px
+    );
+    mix-blend-mode:overlay;
+  }
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
+    background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%);
+  }
+
+  .prompt{font-size:10px;letter-spacing:.02em;color:#556347;display:flex;align-items:center;gap:2px}
+  .prompt .cursor{animation:blink 1s step-end infinite}
+  @keyframes blink{50%{opacity:0}}
+
+  .device{
+    position:relative;
+    width:min(272px,76vw);
+    aspect-ratio:1/1;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;touch-action:none;
+    -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+    border-radius:6px;
+  }
+  .device:focus-visible{outline:2px solid var(--lcd-light);outline-offset:6px}
+
+  .ring{position:absolute;inset:0;z-index:1;pointer-events:none}
+  .tick{position:absolute;width:6px;height:6px;background:#26311c;
+    transform:translate(-50%,-50%);transition:background-color .05s linear}
+  .tick.lit{background:var(--lcd-light);box-shadow:0 0 5px var(--lcd-light)}
+
+  .screen{
+    position:relative;z-index:2;
+    width:58%;aspect-ratio:1/1;
+    background:var(--lcd-lightest);
+    border:3px solid #1c1c1c;
+    border-radius:10px;
+    box-shadow:inset 0 0 0 2px #3a3a3a, 0 0 0 3px #050505;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:6px;
+    padding:8px;
+  }
+  .device.pressed .screen{transform:translateY(1px)}
+
+  .sprite-grid{
+    display:grid;grid-template-columns:repeat(16,1fr);grid-template-rows:repeat(16,1fr);
+    width:72%;aspect-ratio:1/1;
+  }
+  .px{width:100%;height:100%}
+  .px.A{background:var(--lcd-darkest)}
+  .px.B{background:var(--lcd-light)}
+  .px.C{background:var(--lcd-dark)}
+  .px.E{background:var(--lcd-darkest)}
+  .px.E.blink{background:transparent}
+  .px.dot{background:transparent}
+
+  .device.listening .sprite-grid{animation:jiggle .15s linear infinite}
+  @keyframes jiggle{0%{transform:translateX(-1px)}50%{transform:translateX(1px)}100%{transform:translateX(-1px)}}
+
+  /* 레어 골든 답변 */
+  .device.golden .screen{
+    background:var(--gold-lightest);
+    box-shadow:inset 0 0 0 2px #3a3a3a, 0 0 0 3px #050505, 0 0 18px rgba(232,194,106,.75);
+    transition:background-color .25s ease, box-shadow .25s ease;
+  }
+  .device.golden .px.A,.device.golden .px.E{background:var(--gold-darkest)}
+  .device.golden .px.B{background:var(--gold-light)}
+  .device.golden .px.C{background:var(--gold-dark)}
+  .device.golden .tick.lit{background:var(--gold-light);box-shadow:0 0 6px var(--gold-light)}
+  .device.golden .answer{color:var(--gold-darkest)}
+
+  .flare{position:absolute;width:4px;height:4px;background:var(--gold-light);
+    opacity:0;pointer-events:none;z-index:3}
+  .flare1{top:6%;left:10%}
+  .flare2{top:12%;right:8%}
+  .flare3{bottom:8%;left:14%}
+  .flare4{bottom:14%;right:12%}
+  .device.golden .flare{animation:flarePop 1.1s ease-in-out}
+  .device.golden .flare2{animation-delay:.15s}
+  .device.golden .flare3{animation-delay:.3s}
+  .device.golden .flare4{animation-delay:.45s}
+  @keyframes flarePop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.6)}100%{opacity:0;transform:scale(.3)}}
+
+  .answer{
+    font-size:9px;line-height:1.6;color:var(--lcd-darkest);
+    text-align:center;min-height:34px;width:100%;
+    word-break:keep-all;overflow-wrap:break-word;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .answer .caret{animation:blink .6s step-end infinite}
+
+  .status{font-size:9px;color:#556347;letter-spacing:.05em;min-height:12px;text-align:center}
+
+  .share-btn{
+    margin-top:2px;
+    font-family:'Press Start 2P',monospace;
+    font-size:8px;letter-spacing:.06em;
+    color:#556347;background:transparent;
+    border:1px solid #33422b;border-radius:4px;
+    padding:7px 12px;cursor:pointer;
+    opacity:0;pointer-events:none;
+    transition:opacity .3s ease,border-color .2s,color .2s;
+  }
+  .share-btn.show{opacity:1;pointer-events:auto}
+  .share-btn:hover{border-color:var(--lcd-light);color:var(--lcd-light)}
+  .share-btn:active{transform:translateY(1px)}
+  .share-btn:focus-visible{outline:2px solid var(--lcd-light);outline-offset:3px}
+
+  @media (prefers-reduced-motion: reduce){
+    .device.listening .sprite-grid{animation:none}
+    .prompt .cursor,.answer .caret{animation:none}
+    .flare{animation:none}
+  }
+</style>
+</head>
+<body>
+  <p class="prompt">&gt; secret_oracle.exe<span class="cursor">_</span></p>
+
+  <div class="device" id="device" role="button" tabindex="0" aria-label="소라고동 누르기">
+    <div class="ring" id="ring"></div>
+    <span class="flare flare1" aria-hidden="true"></span>
+    <span class="flare flare2" aria-hidden="true"></span>
+    <span class="flare flare3" aria-hidden="true"></span>
+    <span class="flare flare4" aria-hidden="true"></span>
+    <div class="screen">
+      <div class="sprite-grid" id="sprite"></div>
+      <div class="answer" id="answer"></div>
+    </div>
+  </div>
+
+  <p class="status" id="status">눌러서 물어보기</p>
+  <button class="share-btn" id="shareBtn" type="button">SHARE</button>
+
+<script>
+(function(){
+  const pool = [
+    // 구체적 · 행동/시점/방향 지시 (가장 많음)
+    "3일 안에 답을 알게 될 거야.","화요일에 다시 물어봐.","그 사람한테 먼저 연락해.",
+    "이번 달엔 돈 얘기 꺼내지 마.","일주일만 더 기다려봐.","처음 생각한 그거 맞아.",
+    "오른쪽이야.","이미 늦었어, 다음 기회를 노려.","그 사람은 아직 준비가 안 됐어.",
+    "10분 안에 정해.","이번엔 아니야, 다음 달에 다시 물어봐.","네가 먼저 사과해.",
+    "돌아가지 말고 직진해.","세 번째 선택지가 답이다.","자정이 지나면 달라져.",
+    "혼자 하지 말고 도와달라고 해.","계획을 다시 세워, 지금 건 안 맞아.","예상보다 두 배는 오래 걸릴 거야.",
+    "월요일에 움직여.","그 돈은 지금 쓰지 마.","이력서부터 고쳐.",
+    "그 사람 말고 다른 사람한테 물어봐.","일단 자고 일어나서 다시 생각해.","지금 사는 건 나중에 후회해.",
+    "한 걸음만 물러나.","그 여행, 가도 돼.","가족한테 먼저 말해.",
+    "메시지 말고 전화로 해.","이직은 봄에 해.","지금 배운 거, 나중에 쓸모 있어.",
+    "그 관계는 6개월 안에 정리돼.","돈보다 사람을 믿어.","약속을 미루지 마.",
+    "오늘은 쉬어.","그 프로젝트, 계속해.","혼자 결정하지 마.",
+    "타이밍은 지금이 아니라 다음 주야.","그 사람이 먼저 다가올 거야.","포기하기엔 아직 일러.",
+    "이번 주말이 고비야.","그 자리, 지원해봐.","돈은 빌리지 말고 모아.",
+    // 예
+    "그래.","당연하지.","확실해.","그렇게 해.","망설이지 마.","지금이 적기야.",
+    "의심할 필요 없어.","네 직감이 맞아.","밀어붙여.","좋은 신호야.","허락한다.","가도 좋아.",
+    // 아니오
+    "안 돼.","그건 아니야.","그만둬.","가만히 있어.","다시 생각해.","포기하는 게 나아.",
+    "그 길은 아니야.","지금은 절대 안 돼.","미련을 버려.","거절해도 돼.","그 사람은 아니야.","손대지 마.",
+    // 애매함 · 기다림
+    "글쎄.","아직은 몰라.","때가 되면 알게 돼.","다시 물어봐.","지금은 흐릿해.","결정은 네 몫이야.",
+    "조금 더 지켜봐.","아직 정해지지 않았어.","반반이야.","둘 다 맞을 수도 있어.","시간이 답을 줄 거야.","지금은 판단하지 마.",
+    // 알쏭달쏭 · 잠언
+    "파도는 답을 알지만 말하지 않아.","네가 이미 답을 알고 있잖아.","질문을 바꿔봐.","달이 차오르면 답도 차오른다.",
+    "모든 조개가 진주를 품는 건 아니야.","밀물이 오면 알게 될 거야.","고요함 속에 답이 있다.",
+    "바람이 방향을 바꾸고 있어.","네 안의 목소리를 들어봐.","심연이 웃고 있어.",
+    // 장난
+    "물어봐 줘서 고맙지만... 안 돼.","운명에 맡겨.","동전을 던져봐, 그게 더 정확할지도.","소라고동은 지금 낮잠 중이야."
+  ];
+
+  // 아주 가끔(5%) 나오는 레어 골든 답변
+  const goldenPool = [
+    "오늘, 특별한 일이 생긴다.","지금 이 순간을 기억해둬.","우주가 네 편이야.",
+    "이건 진짜야. 믿어도 돼.","행운이 오늘 너를 찾아왔어.","네가 바라던 그 일, 이루어진다.",
+    "지금 이 느낌 그대로 밀고 나가.","오늘은 특별히, 다 잘될 거야."
+  ];
+
+  // 16x16 pixel sprite map: . transparent, A outline, B body, C shade, E eye
+  const SPRITE = [
+    "................",
+    ".....AAAAAA.....",
+    "...AABBBBBBAA...",
+    "..ABBBBBBBBBBA..",
+    ".ABBEBBBBBBEBBA.",
+    ".ABBBBBBBBBBBBA.",
+    "ABBBBCCCCBBBBBBA",
+    "ABBBCCAACCBBBBBA",
+    "ABBBCAAAACBBBBBA",
+    "ABBBBCCCCBBBBBBA",
+    ".ABBBBBBBBBBBBA.",
+    ".ABBBBBBBBBBBBA.",
+    "..ABBBBBBBBBBA..",
+    "...AABBBBBBAA...",
+    ".....AAAAAA.....",
+    "................"
+  ];
+
+  const spriteEl = document.getElementById('sprite');
+  const eyeCells = [];
+  SPRITE.forEach(row=>{
+    row.split('').forEach(ch=>{
+      const d = document.createElement('div');
+      d.className = 'px ' + (ch === '.' ? 'dot' : ch);
+      if(ch === 'E') eyeCells.push(d);
+      spriteEl.appendChild(d);
+    });
+  });
+
+  // blink eyes periodically
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(!reduced){
+    setInterval(()=>{
+      eyeCells.forEach(e=>e.classList.add('blink'));
+      setTimeout(()=> eyeCells.forEach(e=>e.classList.remove('blink')), 140);
+    }, 3600);
+  }
+
+  // 8비트 효과음 (Web Audio, 외부 파일 없음)
+  let audioCtx = null;
+  function ensureAudio(){
+    if(!audioCtx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return null;
+      audioCtx = new AC();
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function beep(freq, dur, type, gainVal, delay){
+    const ctx = ensureAudio();
+    if(!ctx) return;
+    const t0 = ctx.currentTime + (delay || 0);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0, t0);
+    gain.gain.linearRampToValueAtTime(gainVal || 0.05, t0 + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.03);
+  }
+
+  // ring ticks
+  const ringEl = document.getElementById('ring');
+  const TICK_COUNT = 28;
+  const ticks = [];
+  function layoutTicks(){
+    ringEl.innerHTML = '';
+    ticks.length = 0;
+    const box = document.getElementById('device').getBoundingClientRect();
+    const cx = box.width/2, cy = box.height/2;
+    const r = box.width/2 - 3;
+    for(let i=0;i<TICK_COUNT;i++){
+      const angle = (i/TICK_COUNT) * Math.PI*2 - Math.PI/2;
+      const x = cx + Math.cos(angle)*r;
+      const y = cy + Math.sin(angle)*r;
+      const t = document.createElement('div');
+      t.className = 'tick';
+      t.style.left = x+'px';
+      t.style.top = y+'px';
+      ringEl.appendChild(t);
+      ticks.push(t);
+    }
+  }
+  layoutTicks();
+  window.addEventListener('resize', layoutTicks);
+
+  function setTicks(count){
+    ticks.forEach((t,i)=> t.classList.toggle('lit', i < count));
+  }
+
+  const device = document.getElementById('device');
+  const statusEl = document.getElementById('status');
+  const answerEl = document.getElementById('answer');
+  const shareBtn = document.getElementById('shareBtn');
+  const DEFAULT_STATUS = '눌러서 물어보기';
+  const HOLD_MS = reduced ? 160 : 1000;
+
+  let holding = false, busy = false, startTime = 0, rafId = null, lastTickN = -1;
+  let lastAnswerText = '', lastIsGolden = false;
+
+  function frame(ts){
+    if(!holding) return;
+    const elapsed = ts - startTime;
+    const frac = Math.min(1, elapsed/HOLD_MS);
+    const n = Math.round(frac * TICK_COUNT);
+    if(n !== lastTickN){
+      lastTickN = n;
+      setTicks(n);
+      if(!reduced && n > 0 && n % 4 === 0){
+        beep(260 + frac*380, 0.045, 'square', 0.03);
+      }
+    }
+    if(frac >= 1){ finishListen(); return; }
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function startListen(){
+    if(busy) return;
+    busy = true; holding = true; lastTickN = 0;
+    device.classList.add('listening','pressed');
+    answerEl.textContent = '';
+    statusEl.textContent = '듣는 중...';
+    shareBtn.classList.remove('show');
+    startTime = performance.now();
+    if(!reduced) beep(180, 0.05, 'square', 0.035);
+    rafId = requestAnimationFrame(frame);
+  }
+
+  function cancelListen(){
+    if(!holding) return;
+    holding = false; busy = false;
+    cancelAnimationFrame(rafId);
+    device.classList.remove('listening','pressed');
+    setTicks(0);
+    if(!reduced) beep(140, 0.08, 'square', 0.03);
+    statusEl.textContent = '다시 눌러봐';
+    setTimeout(()=>{ if(!holding) statusEl.textContent = DEFAULT_STATUS; }, 1200);
+  }
+
+  function typeOut(text){
+    let i = 0;
+    answerEl.innerHTML = '<span class="txt"></span><span class="caret">_</span>';
+    const txtEl = answerEl.querySelector('.txt');
+    const speed = reduced ? 0 : 32;
+    function step(){
+      if(i < text.length){
+        txtEl.textContent += text[i];
+        i++;
+        setTimeout(step, speed);
+      } else {
+        const c = answerEl.querySelector('.caret');
+        if(c) c.remove();
+      }
+    }
+    step();
+  }
+
+  function finishListen(){
+    holding = false;
+    cancelAnimationFrame(rafId);
+    device.classList.remove('listening');
+    device.classList.remove('pressed');
+    statusEl.textContent = '...';
+    const isGolden = Math.random() < 0.05;
+    const text = isGolden
+      ? goldenPool[Math.floor(Math.random()*goldenPool.length)]
+      : pool[Math.floor(Math.random()*pool.length)];
+    lastAnswerText = text;
+    lastIsGolden = isGolden;
+    if(isGolden){
+      device.classList.add('golden');
+      if(!reduced){
+        beep(523.25,0.14,'triangle',0.05,0);
+        beep(659.25,0.14,'triangle',0.05,0.09);
+        beep(783.99,0.14,'triangle',0.05,0.18);
+        beep(1046.50,0.22,'triangle',0.05,0.27);
+      }
+    } else if(!reduced){
+      beep(523.25,0.12,'square',0.04,0);
+      beep(659.25,0.16,'square',0.04,0.09);
+    }
+    typeOut(text);
+    setTimeout(()=>{
+      setTicks(0);
+      busy = false;
+      statusEl.textContent = DEFAULT_STATUS;
+      device.classList.remove('golden');
+      shareBtn.classList.add('show');
+    }, isGolden ? 2600 : 900);
+  }
+
+  device.addEventListener('pointerdown', function(e){
+    e.preventDefault();
+    startListen();
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(evt=>{
+    device.addEventListener(evt, cancelListen);
+  });
+  device.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ' '){
+      e.preventDefault();
+      if(!busy) startListen();
+    }
+  });
+
+  // ── 정사각 이미지로 공유 ──
+  function roundRect(ctx,x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+  function wrapText(ctx, text, maxWidth){
+    const lines = [];
+    let line = '';
+    for(const ch of text){
+      const test = line + ch;
+      if(ctx.measureText(test).width > maxWidth && line){
+        lines.push(line);
+        line = ch;
+      } else {
+        line = test;
+      }
+    }
+    if(line) lines.push(line);
+    return lines;
+  }
+  function renderShareCanvas(text, golden){
+    const size = 360;
+    const canvas = document.createElement('canvas');
+    canvas.width = size; canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0a0a';
+    ctx.fillRect(0,0,size,size);
+
+    const bezel = 34;
+    ctx.fillStyle = '#141414';
+    roundRect(ctx, bezel, bezel, size-bezel*2, size-bezel*2, 16); ctx.fill();
+
+    const pad = 26;
+    const sx = bezel+pad, sy = bezel+pad, sw = size-bezel*2-pad*2, sh = sw;
+    ctx.fillStyle = golden ? '#f5e6a8' : '#9bbc0f';
+    roundRect(ctx, sx, sy, sw, sh, 10); ctx.fill();
+    ctx.strokeStyle = '#1c1c1c'; ctx.lineWidth = 4;
+    roundRect(ctx, sx, sy, sw, sh, 10); ctx.stroke();
+
+    const palette = golden
+      ? {A:'#4a3510', B:'#e8c26a', C:'#8a6a1f', E:'#4a3510'}
+      : {A:'#0f380f', B:'#8bac0f', C:'#306230', E:'#0f380f'};
+    const cell = (sw*0.66)/16;
+    const spX = sx + (sw - cell*16)/2;
+    const spY = sy + sh*0.12;
+    SPRITE.forEach((row,ry)=>{
+      row.split('').forEach((ch,rx)=>{
+        if(ch === '.') return;
+        ctx.fillStyle = palette[ch];
+        ctx.fillRect(spX+rx*cell, spY+ry*cell, cell+0.6, cell+0.6);
+      });
+    });
+
+    ctx.fillStyle = golden ? '#4a3510' : '#0f380f';
+    ctx.font = "13px 'Press Start 2P', monospace";
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const lines = wrapText(ctx, text, sw*0.84);
+    const lineH = 19;
+    let ty = spY + cell*16 + 30;
+    lines.forEach((ln,i)=> ctx.fillText(ln, sx+sw/2, ty + i*lineH));
+
+    ctx.fillStyle = '#556347';
+    ctx.font = "9px 'Press Start 2P', monospace";
+    ctx.fillText('MAGIC CONCH', size/2, size-20);
+
+    return canvas.toDataURL('image/png');
+  }
+
+  async function shareAnswer(){
+    if(!lastAnswerText) return;
+    const dataUrl = renderShareCanvas(lastAnswerText, lastIsGolden);
+    // 실제 웹 주소(http/https)에 호스팅된 경우에만 링크를 함께 보냄
+    const shareUrl = location.protocol.indexOf('http') === 0 ? location.href : '';
+    try{
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], 'magic-conch.png', {type:'image/png'});
+      const shareData = {files:[file], title:'마법의 소라고동', text: lastAnswerText};
+      if(shareUrl) shareData.url = shareUrl;
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share(shareData);
+        return;
+      }
+    }catch(err){ /* 사용자 취소 등 → 아래 대체 동작으로 진행 */ }
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'magic-conch.png';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if(navigator.clipboard){
+      const clipText = '🐚 ' + lastAnswerText + (shareUrl ? ('\n' + shareUrl) : '');
+      try{ await navigator.clipboard.writeText(clipText); }catch(e){}
+    }
+    const prev = statusEl.textContent;
+    statusEl.textContent = '이미지 저장됨';
+    setTimeout(()=>{ statusEl.textContent = prev === '이미지 저장됨' ? DEFAULT_STATUS : prev; }, 1400);
+  }
+  shareBtn.addEventListener('click', shareAnswer);
+})();
+</script>
+</body>
+</html>
