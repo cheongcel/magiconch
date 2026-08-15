@@ -18,6 +18,18 @@
     --gold-light:#e8c26a;
     --gold-dark:#8a6a1f;
     --gold-darkest:#4a3510;
+    --rare-lightest:#cfe3ee;
+    --rare-light:#8fb8d6;
+    --rare-dark:#345066;
+    --rare-darkest:#141f2b;
+    --veryrare-lightest:#ddc9f0;
+    --veryrare-light:#a97fd1;
+    --veryrare-dark:#402a52;
+    --veryrare-darkest:#1c1226;
+    --super-lightest:#f0c9e6;
+    --super-light:#c85fc0;
+    --super-dark:#4a1a45;
+    --super-darkest:#1f0a1c;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{height:100%}
@@ -114,11 +126,57 @@
   .flare2{top:12%;right:8%}
   .flare3{bottom:8%;left:14%}
   .flare4{bottom:14%;right:12%}
-  .device.golden .flare{animation:flarePop 1.1s ease-in-out}
-  .device.golden .flare2{animation-delay:.15s}
-  .device.golden .flare3{animation-delay:.3s}
-  .device.golden .flare4{animation-delay:.45s}
+  .device.golden .flare,.device.tier-rare .flare,.device.tier-veryrare .flare,.device.tier-super .flare{
+    animation:flarePop 1.1s ease-in-out}
+  .device.golden .flare2,.device.tier-rare .flare2,.device.tier-veryrare .flare2,.device.tier-super .flare2{animation-delay:.15s}
+  .device.golden .flare3,.device.tier-rare .flare3,.device.tier-veryrare .flare3,.device.tier-super .flare3{animation-delay:.3s}
+  .device.golden .flare4,.device.tier-rare .flare4,.device.tier-veryrare .flare4,.device.tier-super .flare4{animation-delay:.45s}
   @keyframes flarePop{0%{opacity:0;transform:scale(.3)}30%{opacity:1;transform:scale(1.6)}100%{opacity:0;transform:scale(.3)}}
+
+  /* RARE */
+  .device.tier-rare .screen{
+    background:var(--rare-lightest);
+    box-shadow:inset 0 0 0 2px #3a3a3a, 0 0 0 3px #050505, 0 0 14px rgba(143,184,214,.65);
+    transition:background-color .25s ease, box-shadow .25s ease;
+  }
+  .device.tier-rare .px.A,.device.tier-rare .px.E{background:var(--rare-darkest)}
+  .device.tier-rare .px.B{background:var(--rare-light)}
+  .device.tier-rare .px.C{background:var(--rare-dark)}
+  .device.tier-rare .tick.lit{background:var(--rare-light);box-shadow:0 0 6px var(--rare-light)}
+  .device.tier-rare .answer{color:var(--rare-darkest)}
+  .device.tier-rare .flare{background:var(--rare-light)}
+
+  /* VERY RARE */
+  .device.tier-veryrare .screen{
+    background:var(--veryrare-lightest);
+    box-shadow:inset 0 0 0 2px #3a3a3a, 0 0 0 3px #050505, 0 0 18px rgba(169,127,209,.75);
+    transition:background-color .25s ease, box-shadow .25s ease;
+  }
+  .device.tier-veryrare .px.A,.device.tier-veryrare .px.E{background:var(--veryrare-darkest)}
+  .device.tier-veryrare .px.B{background:var(--veryrare-light)}
+  .device.tier-veryrare .px.C{background:var(--veryrare-dark)}
+  .device.tier-veryrare .tick.lit{background:var(--veryrare-light);box-shadow:0 0 6px var(--veryrare-light)}
+  .device.tier-veryrare .answer{color:var(--veryrare-darkest)}
+  .device.tier-veryrare .flare{background:var(--veryrare-light)}
+
+  /* SUPER RARE - 살짝 깜빡이는 글리치 연출 */
+  .device.tier-super .screen{
+    background:var(--super-lightest);
+    box-shadow:inset 0 0 0 2px #3a3a3a, 0 0 0 3px #050505, 0 0 22px rgba(200,95,192,.85);
+    transition:background-color .25s ease, box-shadow .25s ease;
+    animation:superFlicker 1.6s steps(1) infinite;
+  }
+  .device.tier-super .px.A,.device.tier-super .px.E{background:var(--super-darkest)}
+  .device.tier-super .px.B{background:var(--super-light)}
+  .device.tier-super .px.C{background:var(--super-dark)}
+  .device.tier-super .tick.lit{background:var(--super-light);box-shadow:0 0 7px var(--super-light)}
+  .device.tier-super .answer{color:var(--super-darkest)}
+  .device.tier-super .flare{background:var(--super-light)}
+  @keyframes superFlicker{
+    0%,44%,52%,100%{filter:brightness(1)}
+    46%{filter:brightness(1.35)}
+    49%{filter:brightness(.82)}
+  }
 
   .answer{
     font-family:'Courier New',monospace;
@@ -161,6 +219,7 @@
     .prompt .cursor,.answer .caret{animation:none}
     .flare{animation:none}
     .mystery-badge{animation:none}
+    .device.tier-super .screen{animation:none}
   }
 </style>
 </head>
@@ -184,82 +243,112 @@
 
 <script>
 (function(){
+  // 메인 답변 (반말)
   const pool = [
-    "그렇습니다.","아닙니다.","가능성이 높습니다.",
-    "기대해도 좋습니다.","기대하지 않는 편이 좋습니다.","지금은 알 수 없습니다.",
-    "곧 분명해질 것입니다.","이미 답을 알고 있습니다.","첫 번째 생각을 따르십시오.",
-    "다시 생각해보십시오.","너무 깊이 생각하지 마십시오.","직감을 믿으십시오.",
-    "서두르지 마십시오.","지금 행동하십시오.","조금 더 기다리십시오.",
-    "때가 아직 아닙니다.","지금이 적절한 때입니다.","기회를 놓치지 마십시오.",
-    "한 번 더 시도하십시오.","이번에는 물러나는 편이 좋습니다.","그대로 진행하십시오.",
-    "방향을 바꾸십시오.","계획을 수정하십시오.","처음부터 다시 보십시오.",
-    "가장 단순한 방법을 선택하십시오.","어려운 쪽이 오히려 맞습니다.","안전한 선택을 하십시오.",
-    "모험할 가치가 있습니다.","위험을 감수하지 마십시오.","결과보다 과정이 중요합니다.",
-    "결과는 생각보다 좋을 것입니다.","예상과 다른 결과가 나올 것입니다.","실망할 가능성이 있습니다.",
-    "뜻밖의 행운이 따를 것입니다.","우연을 무시하지 마십시오.","이것은 우연이 아닐 수도 있습니다.",
-    "중요한 단서가 곧 나타날 것입니다.","아직 빠진 정보가 있습니다.","모든 것을 알 필요는 없습니다.",
-    "사실을 먼저 확인하십시오.","다른 사람의 말을 들어보십시오.","다른 사람의 의견에 흔들리지 마십시오.",
-    "혼자 결정하는 편이 좋습니다.","믿을 만한 사람에게 물어보십시오.","그 사람의 행동을 보십시오.",
-    "말보다 행동을 믿으십시오.","숨겨진 의도가 있을 수 있습니다.","생각보다 단순한 문제입니다.",
-    "보이는 그대로일 가능성이 높습니다.","첫인상이 맞을 것입니다.","첫인상만으로 판단하지 마십시오.",
-    "조금 더 지켜보십시오.","거리를 두십시오.","먼저 다가가십시오.",
-    "상대가 움직이게 두십시오.","먼저 연락하지 마십시오.","솔직하게 말하십시오.",
-    "지금은 말하지 않는 편이 좋습니다.","질문하십시오.","설명하려 하지 마십시오.",
-    "대답을 요구하지 마십시오.","곧 연락이 올 수 있습니다.","먼저 연락해야 할 것입니다.",
-    "상대도 같은 생각을 하고 있을 가능성이 있습니다.","기대하는 만큼은 아닐 것입니다.","생각보다 당신에게 유리합니다.",
-    "당신이 모르는 변수가 있습니다.","상황이 곧 바뀔 것입니다.","지금의 상황은 오래가지 않습니다.",
-    "시간이 해결할 것입니다.","시간이 해결해주지는 않을 것입니다.","결정을 미루지 마십시오.",
-    "오늘 결정하지 마십시오.","며칠 뒤 다시 생각하십시오.","한 달 뒤에는 다르게 보일 것입니다.",
-    "결국 돌아오게 될 것입니다.","놓아주는 편이 낫습니다.","붙잡을 가치가 있습니다.",
-    "다시 기회가 생길 것입니다.","같은 기회는 다시 오지 않습니다.","예상하지 못한 사람이 도움을 줄 것입니다.",
-    "도움을 요청하십시오.","혼자 해낼 수 있습니다.","준비가 더 필요합니다.",
-    "이미 충분히 준비되었습니다.","완벽해질 때까지 기다리지 마십시오.","작은 것부터 시작하십시오.",
-    "크게 생각하십시오.","계획을 아무에게나 말하지 마십시오.","공개적으로 선언하는 것이 도움이 됩니다.",
-    "돈을 기준으로 판단하지 마십시오.","돈을 무시해서는 안 됩니다.","장기적으로 생각하십시오.",
-    "당장의 이익을 선택하십시오.","손해를 감수할 가치가 있습니다.","비용에 비해 가치가 없습니다.",
-    "예상보다 큰 보상이 있을 것입니다.","지금 투자하지 마십시오.","조금만 투자하십시오.",
-    "과감하게 선택하십시오.","다른 선택지가 나타날 때까지 기다리십시오.","두 번째 선택지가 더 좋습니다.",
-    "처음 선택했던 것이 맞습니다.","어느 쪽을 선택해도 괜찮습니다.","선택하지 않는 것도 선택입니다.",
-    "조건을 하나 바꿔보십시오.","질문 자체를 바꿔보십시오.","원하는 것이 무엇인지 다시 생각하십시오.",
-    "원하는 것과 필요한 것은 다릅니다.","생각보다 중요하지 않은 문제입니다.","생각보다 중요한 문제입니다.",
-    "지금 느끼는 불편함을 무시하지 마십시오.","걱정할 필요가 없습니다.","경계하는 편이 좋습니다.",
-    "확신이 생길 때까지 기다리십시오.","확신은 기다린다고 생기지 않습니다.","증거를 찾으십시오.",
-    "모든 증거가 이미 있습니다.","아직 결론을 내리지 마십시오.","결론은 이미 나와 있습니다.",
-    "과거와 같은 방식으로 행동하지 마십시오.","전에 성공했던 방법을 다시 사용하십시오.","이번에는 다르게 해보십시오.",
-    "한 번의 실패로 판단하지 마십시오.","같은 일이 반복된다면 의미가 있습니다.","예외일 가능성이 높습니다.",
-    "당신의 예상이 맞습니다.","당신의 예상과 정반대일 수 있습니다.","너무 많은 의미를 부여하고 있습니다.",
-    "그냥 지나치지 마십시오.","직접 확인하십시오.","굳이 확인할 필요가 없습니다.",
-    "답을 듣고도 마음이 바뀌지 않을 것입니다.","이미 결정한 것 같습니다.","마음이 편해지는 쪽을 선택하십시오.",
-    "더 흥미로운 쪽을 선택하십시오.","후회가 적을 쪽을 선택하십시오.","가장 원하는 쪽을 선택하십시오.",
-    "가장 두려운 쪽에 답이 있을 수 있습니다.","이번에는 쉬운 길을 택하십시오.","지금 포기하기에는 이릅니다.",
-    "그만둘 때가 되었습니다.","조금만 더 가보십시오.","마지막으로 한 번만 시도하십시오.",
-    "예상보다 오래 걸릴 것입니다.","생각보다 빨리 해결될 것입니다.","기다린 보람이 있을 것입니다.",
-    "기다려도 달라지지 않을 것입니다.","새로운 사람이 나타날 것입니다.","익숙한 사람이 다시 나타날 수 있습니다.",
-    "관계가 달라질 것입니다.","지금의 관계를 그대로 유지하십시오.","가까워질 가능성이 있습니다.",
-    "자연스럽게 멀어질 것입니다.","당신이 먼저 선을 정해야 합니다.","상대에게 선택권을 주십시오.",
-    "말하지 않은 것이 중요합니다.","이미 충분히 표현했습니다.","한 번은 분명하게 말해야 합니다.",
-    "반응을 기다리십시오.","상대의 반응이 답입니다.","답이 없는 것도 답입니다.",
-    "지금 보이는 것이 전부는 아닙니다.","숨은 의미를 찾지 마십시오.","상황을 있는 그대로 받아들이십시오.",
-    "의심해볼 이유가 있습니다.","당신의 판단을 믿으십시오.","판단을 잠시 보류하십시오.",
-    "예상 밖의 방향으로 흘러갈 것입니다.","결국 원래 자리로 돌아올 것입니다.","변화가 필요합니다.",
-    "아무것도 바꾸지 마십시오.","환경을 바꾸십시오.","사람을 바꾸려 하지 마십시오.",
-    "방법을 바꾸십시오.","목표는 그대로 두십시오.","목표 자체를 다시 생각하십시오.",
-    "지금 시작하면 늦지 않습니다.","조금 늦었습니다. 그래도 가능합니다.","이번 기회는 지나가는 편이 낫습니다.",
-    "다음 기회가 더 좋을 것입니다.","예상하지 못한 제안이 들어올 수 있습니다.","제안을 받아들이십시오.",
-    "조건을 확인한 뒤 결정하십시오.","거절하는 것이 낫습니다.","협상해보십시오.",
-    "원하는 것을 정확히 말하십시오.","양보하지 마십시오.","조금 양보하면 일이 풀립니다.",
-    "상대방에게 시간을 주십시오.","당신 자신에게 시간을 주십시오.","오늘은 아무것도 하지 마십시오.",
-    "오늘 안에 행동하십시오.","내일이면 답이 달라질 수 있습니다.","처음 떠오른 사람이 중요합니다.",
-    "예상 밖의 곳에서 답을 찾게 될 것입니다.","결국 당신에게 도움이 될 것입니다.","이것은 지나가는 과정입니다.",
-    "아직 이야기가 끝나지 않았습니다.","한 번 펼친 답을 믿어보십시오."
+    "그래.","아니야.","가능성이 높아.",
+    "기대해도 좋아.","기대하지 않는 편이 좋아.","지금은 알 수 없어.",
+    "곧 분명해질 거야.","이미 답을 알고 있어.","첫 번째 생각을 따라.",
+    "다시 생각해봐.","너무 깊이 생각하지 마.","직감을 믿어.",
+    "서두르지 마.","지금 행동해.","조금 더 기다려.",
+    "때가 아직 아니야.","지금이 적절한 때야.","기회를 놓치지 마.",
+    "한 번 더 시도해봐.","이번에는 물러나는 편이 좋아.","그대로 진행해.",
+    "방향을 바꿔.","계획을 수정해.","처음부터 다시 봐.",
+    "가장 단순한 방법을 선택해.","어려운 쪽이 오히려 맞아.","안전한 선택을 해.",
+    "모험할 가치가 있어.","위험을 감수하지 마.","결과보다 과정이 중요해.",
+    "결과는 생각보다 좋을 거야.","예상과 다른 결과가 나올 거야.","실망할 가능성이 있어.",
+    "뜻밖의 행운이 따를 거야.","우연을 무시하지 마.","이건 우연이 아닐 수도 있어.",
+    "중요한 단서가 곧 나타날 거야.","아직 빠진 정보가 있어.","모든 걸 알 필요는 없어.",
+    "사실을 먼저 확인해.","다른 사람 말을 들어봐.","다른 사람 의견에 흔들리지 마.",
+    "혼자 결정하는 편이 좋아.","믿을 만한 사람한테 물어봐.","그 사람 행동을 봐.",
+    "말보다 행동을 믿어.","숨겨진 의도가 있을 수 있어.","생각보다 단순한 문제야.",
+    "보이는 그대로일 가능성이 높아.","첫인상이 맞을 거야.","첫인상만으로 판단하지 마.",
+    "조금 더 지켜봐.","거리를 둬.","먼저 다가가.",
+    "상대가 움직이게 둬.","먼저 연락하지 마.","솔직하게 말해.",
+    "지금은 말하지 않는 편이 좋아.","질문해.","설명하려 하지 마.",
+    "대답을 요구하지 마.","곧 연락이 올 수 있어.","먼저 연락해야 할 거야.",
+    "상대도 같은 생각을 하고 있을 가능성이 있어.","기대하는 만큼은 아닐 거야.","생각보다 너한테 유리해.",
+    "네가 모르는 변수가 있어.","상황이 곧 바뀔 거야.","지금 상황은 오래가지 않아.",
+    "시간이 해결해줄 거야.","시간이 해결해주진 않을 거야.","결정을 미루지 마.",
+    "오늘 결정하지 마.","며칠 뒤 다시 생각해.","한 달 뒤엔 다르게 보일 거야.",
+    "결국 돌아오게 될 거야.","놓아주는 편이 나아.","붙잡을 가치가 있어.",
+    "다시 기회가 생길 거야.","같은 기회는 다시 안 와.","예상 못 한 사람이 도움을 줄 거야.",
+    "도움을 요청해.","혼자 해낼 수 있어.","준비가 더 필요해.",
+    "이미 충분히 준비됐어.","완벽해질 때까지 기다리지 마.","작은 것부터 시작해.",
+    "크게 생각해.","계획을 아무한테나 말하지 마.","공개적으로 선언하는 게 도움이 돼.",
+    "돈을 기준으로 판단하지 마.","돈을 무시하면 안 돼.","장기적으로 생각해.",
+    "당장의 이익을 선택해.","손해를 감수할 가치가 있어.","비용에 비해 가치가 없어.",
+    "예상보다 큰 보상이 있을 거야.","지금 투자하지 마.","조금만 투자해.",
+    "과감하게 선택해.","다른 선택지가 나타날 때까지 기다려.","두 번째 선택지가 더 좋아.",
+    "처음 선택했던 게 맞아.","어느 쪽을 선택해도 괜찮아.","선택하지 않는 것도 선택이야.",
+    "조건을 하나 바꿔봐.","질문 자체를 바꿔봐.","원하는 게 뭔지 다시 생각해.",
+    "원하는 것과 필요한 건 달라.","생각보다 중요하지 않은 문제야.","생각보다 중요한 문제야.",
+    "지금 느끼는 불편함을 무시하지 마.","걱정할 필요 없어.","경계하는 편이 좋아.",
+    "확신이 생길 때까지 기다려.","확신은 기다린다고 생기지 않아.","증거를 찾아봐.",
+    "모든 증거가 이미 있어.","아직 결론을 내리지 마.","결론은 이미 나와 있어.",
+    "과거와 같은 방식으로 행동하지 마.","전에 성공했던 방법을 다시 써봐.","이번엔 다르게 해봐.",
+    "한 번의 실패로 판단하지 마.","같은 일이 반복되면 의미가 있어.","예외일 가능성이 높아.",
+    "네 예상이 맞아.","네 예상과 정반대일 수 있어.","너무 많은 의미를 부여하고 있어.",
+    "그냥 지나치지 마.","직접 확인해.","굳이 확인할 필요 없어.",
+    "답을 듣고도 마음은 안 바뀔 거야.","이미 결정한 것 같아.","마음이 편해지는 쪽을 선택해.",
+    "더 흥미로운 쪽을 선택해.","후회가 적을 쪽을 선택해.","가장 원하는 쪽을 선택해.",
+    "가장 두려운 쪽에 답이 있을 수 있어.","이번엔 쉬운 길을 택해.","지금 포기하기엔 일러.",
+    "그만둘 때가 됐어.","조금만 더 가봐.","마지막으로 한 번만 시도해봐.",
+    "예상보다 오래 걸릴 거야.","생각보다 빨리 해결될 거야.","기다린 보람이 있을 거야.",
+    "기다려도 달라지지 않을 거야.","새로운 사람이 나타날 거야.","익숙한 사람이 다시 나타날 수 있어.",
+    "관계가 달라질 거야.","지금 관계를 그대로 유지해.","가까워질 가능성이 있어.",
+    "자연스럽게 멀어질 거야.","네가 먼저 선을 정해야 해.","상대한테 선택권을 줘.",
+    "말하지 않은 게 중요해.","이미 충분히 표현했어.","한 번은 분명하게 말해야 해.",
+    "반응을 기다려.","상대 반응이 답이야.","답이 없는 것도 답이야.",
+    "지금 보이는 게 전부는 아니야.","숨은 의미를 찾지 마.","상황을 있는 그대로 받아들여.",
+    "의심해볼 이유가 있어.","네 판단을 믿어.","판단을 잠시 보류해.",
+    "예상 밖의 방향으로 흘러갈 거야.","결국 원래 자리로 돌아올 거야.","변화가 필요해.",
+    "아무것도 바꾸지 마.","환경을 바꿔.","사람을 바꾸려 하지 마.",
+    "방법을 바꿔.","목표는 그대로 둬.","목표 자체를 다시 생각해.",
+    "지금 시작하면 늦지 않아.","조금 늦었어. 그래도 가능해.","이번 기회는 지나가는 편이 나아.",
+    "다음 기회가 더 좋을 거야.","예상 못 한 제안이 들어올 수 있어.","제안을 받아들여.",
+    "조건을 확인한 뒤 결정해.","거절하는 게 나아.","협상해봐.",
+    "원하는 걸 정확히 말해.","양보하지 마.","조금 양보하면 일이 풀려.",
+    "상대방한테 시간을 줘.","너 자신한테 시간을 줘.","오늘은 아무것도 하지 마.",
+    "오늘 안에 행동해.","내일이면 답이 달라질 수 있어.","처음 떠오른 사람이 중요해.",
+    "예상 밖의 곳에서 답을 찾게 될 거야.","결국 너한테 도움이 될 거야.","이건 지나가는 과정이야.",
+    "아직 이야기가 끝나지 않았어.","한 번 펼친 답을 믿어봐."
   ];
 
-  // 아주 가끔(5%, 새벽 3시엔 확률 상승) 나오는 레어 골든 답변
+  // GOLDEN (기본 5%, 새벽 3시엔 확률 상승)
   const goldenPool = [
-    "오늘, 특별한 일이 생깁니다.","지금 이 순간을 기억해두십시오.","우주가 당신의 편입니다.",
-    "이것은 진짜입니다. 믿어도 좋습니다.","행운이 오늘 당신을 찾아왔습니다.","바라던 그 일이 이루어집니다.",
-    "지금 이 느낌 그대로 밀고 나가십시오.","오늘은 특별히, 모든 것이 잘될 것입니다.","찾던 답이 바로 눈앞에 있습니다.",
-    "오늘 하루, 특별히 잘 풀립니다.","지금 이 마음은 틀리지 않았습니다.","작은 기적이 곧 일어납니다."
+    "오늘, 특별한 일이 생긴다.","지금 이 순간을 기억해둬.","우주가 네 편이야.",
+    "이건 진짜야. 믿어도 돼.","행운이 오늘 너를 찾아왔어.","네가 바라던 그 일, 이루어진다.",
+    "지금 이 느낌 그대로 밀고 나가.","오늘은 특별히, 다 잘될 거야.","네가 찾던 답, 바로 눈앞에 있어.",
+    "오늘 하루, 특별히 잘 풀린다.","지금 이 마음, 틀리지 않았어.","작은 기적이 곧 일어나."
+  ];
+
+  // RARE
+  const rarePool = [
+    "조금 있으면 이유를 알게 돼.","지금 생각난 사람을 기억해.","두 번째 기회가 와.",
+    "생각보다 가까이 있어.","오늘은 우연을 그냥 넘기지 마.","네가 모르는 곳에서 일이 움직이고 있어.",
+    "그 사람이 먼저 움직일 거야.","처음 느낀 게 맞았어.","곧 같은 말을 다른 곳에서 듣게 될 거야.",
+    "한 번 지나간 기회가 다시 와.","예상하지 못한 사람이 답을 가져올 거야.","아직 끝난 일이 아니야.",
+    "조금 늦게 알게 될 뿐이야."
+  ];
+
+  // VERY RARE
+  const veryRarePool = [
+    "지금 시간을 기억해 둬.","아직 만나지 않은 사람이 관련돼 있어.","네가 잊은 건 없어지지 않았어.",
+    "곧 상황이 완전히 다르게 보일 거야.","한 사람이 너를 예상보다 오래 기억하고 있어.","결정적인 건 네가 듣지 못한 말이야.",
+    "지금은 아무것도 없는 것처럼 보여도 달라질 거야.","예전에 끝났다고 생각한 일이 다시 이어져.","너보다 먼저 결정을 내린 사람이 있어.",
+    "곧 누군가의 태도가 달라질 거야."
+  ];
+
+  // SUPER RARE
+  const superRarePool = [
+    "그 일은 이미 시작됐어.","방금 떠오른 건 잊지 마.","그 이름은 아직 끝나지 않았어.",
+    "네가 모르는 답이 이미 정해져 있어.","곧 설명되지 않는 우연이 한 번 더 생겨.","다음에 같은 장면을 보면 멈춰.",
+    "네가 선택하지 않은 쪽도 아직 남아 있어.","한 번 사라진 것이 다시 나타나.","지금은 모르는 편이 더 좋아.",
+    "그 사람이 먼저 알아차릴 거야.","아직 아무 일도 없었다고 생각하지 마.","가장 최근에 포기한 것을 다시 보게 돼.",
+    "네가 기다리는 소식은 예상한 곳에서 오지 않아.","곧 처음 보는 사람이 익숙하게 느껴질 거야.","네가 우연이라고 넘긴 것 중 하나는 우연이 아니야.",
+    "한 사람은 네가 생각하는 것보다 가까이 있어.","이번에는 뒤늦게 의미를 알게 돼.","같은 숫자를 다시 보면 기억해 둬.",
+    "오늘 들은 말 하나가 나중에 다시 돌아와.","네가 피한 선택이 다시 나타날 거야.","한 번 더 같은 일이 생기면 그때는 믿어.",
+    "네가 찾고 있는 건 이미 방향을 바꿨어.","곧 누군가가 예상하지 못한 질문을 할 거야.","그 순간에는 첫 번째 생각대로 해."
   ];
 
   // 16x16 pixel sprite map: . transparent, A outline, B body, C shade, E eye
@@ -343,10 +432,10 @@
     });
   });
 
-  // 새벽 3시에만 나타나는 ??? 뱃지 (골든 확률도 이 시간엔 살짝 올라감)
-  let goldenChance = 0.05;
+  // 새벽 3시에만 나타나는 ??? 뱃지 (모든 희귀 등급 확률이 이 시간엔 올라감)
+  let goldenChance = 0.05, rareChance = 0.05, veryRareChance = 0.025, superChance = 0.01;
   if(isMysteryHour){
-    goldenChance = 0.3;
+    goldenChance = 0.3; rareChance = 0.2; veryRareChance = 0.1; superChance = 0.05;
     const badge = document.createElement('span');
     badge.className = 'mystery-badge';
     badge.textContent = '???';
@@ -426,7 +515,7 @@
   const HOLD_MS = reduced ? 160 : 1000;
 
   let holding = false, busy = false, startTime = 0, rafId = null, lastTickN = -1;
-  let lastAnswerText = '', lastIsGolden = false;
+  let lastAnswerText = '', lastTier = 'common';
 
   function frame(ts){
     if(!holding) return;
@@ -485,38 +574,70 @@
     step();
   }
 
+  const TIER_POOLS = {common: pool, rare: rarePool, veryrare: veryRarePool, super: superRarePool, golden: goldenPool};
+  const TIER_CLASS = {rare: 'tier-rare', veryrare: 'tier-veryrare', super: 'tier-super', golden: 'golden'};
+  const TIER_VISIBLE_MS = {common: 900, rare: 1500, veryrare: 2000, super: 2400, golden: 2600};
+
+  function pickTier(){
+    const r = Math.random();
+    let acc = 0;
+    if(r < (acc += superChance)) return 'super';
+    if(r < (acc += veryRareChance)) return 'veryrare';
+    if(r < (acc += rareChance)) return 'rare';
+    if(r < (acc += goldenChance)) return 'golden';
+    return 'common';
+  }
+
+  function playTierSound(tier){
+    if(reduced) return;
+    if(tier === 'golden'){
+      beep(523.25,0.14,'triangle',0.05,0);
+      beep(659.25,0.14,'triangle',0.05,0.09);
+      beep(783.99,0.14,'triangle',0.05,0.18);
+      beep(1046.50,0.22,'triangle',0.05,0.27);
+    } else if(tier === 'super'){
+      beep(698.46,0.16,'sine',0.05,0);
+      beep(587.33,0.16,'sine',0.05,0.12);
+      beep(523.25,0.16,'sine',0.05,0.24);
+      beep(466.16,0.26,'sine',0.05,0.36);
+    } else if(tier === 'veryrare'){
+      beep(440.00,0.14,'sine',0.045,0);
+      beep(554.37,0.14,'sine',0.045,0.1);
+      beep(659.25,0.2,'sine',0.045,0.2);
+    } else if(tier === 'rare'){
+      beep(440.00,0.14,'sine',0.045,0);
+      beep(523.25,0.2,'sine',0.045,0.11);
+    } else {
+      beep(523.25,0.12,'square',0.04,0);
+      beep(659.25,0.16,'square',0.04,0.09);
+    }
+  }
+
   function finishListen(){
     holding = false;
     cancelAnimationFrame(rafId);
     device.classList.remove('listening');
     device.classList.remove('pressed');
     statusEl.textContent = '...';
-    const isGolden = Math.random() < goldenChance;
-    const text = isGolden
-      ? goldenPool[Math.floor(Math.random()*goldenPool.length)]
-      : pool[Math.floor(Math.random()*pool.length)];
+
+    const tier = pickTier();
+    const tierPool = TIER_POOLS[tier];
+    const text = tierPool[Math.floor(Math.random()*tierPool.length)];
     lastAnswerText = text;
-    lastIsGolden = isGolden;
-    if(isGolden){
-      device.classList.add('golden');
-      if(!reduced){
-        beep(523.25,0.14,'triangle',0.05,0);
-        beep(659.25,0.14,'triangle',0.05,0.09);
-        beep(783.99,0.14,'triangle',0.05,0.18);
-        beep(1046.50,0.22,'triangle',0.05,0.27);
-      }
-    } else if(!reduced){
-      beep(523.25,0.12,'square',0.04,0);
-      beep(659.25,0.16,'square',0.04,0.09);
-    }
+    lastTier = tier;
+
+    const cls = TIER_CLASS[tier];
+    if(cls) device.classList.add(cls);
+    playTierSound(tier);
+
     typeOut(text);
     setTimeout(()=>{
       setTicks(0);
       busy = false;
       statusEl.textContent = DEFAULT_STATUS;
-      device.classList.remove('golden');
+      if(cls) device.classList.remove(cls);
       shareBtn.classList.add('show');
-    }, isGolden ? 2600 : 900);
+    }, TIER_VISIBLE_MS[tier]);
   }
 
   device.addEventListener('pointerdown', function(e){
@@ -558,7 +679,15 @@
     if(line) lines.push(line);
     return lines;
   }
-  function renderShareCanvas(text, golden){
+  const SHARE_TIER_COLORS = {
+    common:   {bg:'#9bbc0f', A:'#0f380f', B:'#8bac0f', C:'#306230'},
+    rare:     {bg:'#cfe3ee', A:'#141f2b', B:'#8fb8d6', C:'#345066'},
+    veryrare: {bg:'#ddc9f0', A:'#1c1226', B:'#a97fd1', C:'#402a52'},
+    super:    {bg:'#f0c9e6', A:'#1f0a1c', B:'#c85fc0', C:'#4a1a45'},
+    golden:   {bg:'#f5e6a8', A:'#4a3510', B:'#e8c26a', C:'#8a6a1f'}
+  };
+  function renderShareCanvas(text, tier){
+    const colors = SHARE_TIER_COLORS[tier] || SHARE_TIER_COLORS.common;
     const size = 360;
     const canvas = document.createElement('canvas');
     canvas.width = size; canvas.height = size;
@@ -572,14 +701,12 @@
 
     const pad = 26;
     const sx = bezel+pad, sy = bezel+pad, sw = size-bezel*2-pad*2, sh = sw;
-    ctx.fillStyle = golden ? '#f5e6a8' : '#9bbc0f';
+    ctx.fillStyle = colors.bg;
     roundRect(ctx, sx, sy, sw, sh, 10); ctx.fill();
     ctx.strokeStyle = '#1c1c1c'; ctx.lineWidth = 4;
     roundRect(ctx, sx, sy, sw, sh, 10); ctx.stroke();
 
-    const palette = golden
-      ? {A:'#4a3510', B:'#e8c26a', C:'#8a6a1f', E:'#4a3510'}
-      : {A:'#0f380f', B:'#8bac0f', C:'#306230', E:'#0f380f'};
+    const palette = {A:colors.A, B:colors.B, C:colors.C, E:colors.A};
     const cell = (sw*0.66)/16;
     const spX = sx + (sw - cell*16)/2;
     const spY = sy + sh*0.12;
@@ -591,7 +718,7 @@
       });
     });
 
-    ctx.fillStyle = golden ? '#4a3510' : '#0f380f';
+    ctx.fillStyle = colors.A;
     ctx.font = "13px 'Press Start 2P', monospace";
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -609,7 +736,7 @@
 
   async function shareAnswer(){
     if(!lastAnswerText) return;
-    const dataUrl = renderShareCanvas(lastAnswerText, lastIsGolden);
+    const dataUrl = renderShareCanvas(lastAnswerText, lastTier);
     // 실제 웹 주소(http/https)에 호스팅된 경우에만 링크를 함께 보냄
     const shareUrl = location.protocol.indexOf('http') === 0 ? location.href : '';
     try{
