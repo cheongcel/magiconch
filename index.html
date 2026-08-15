@@ -214,6 +214,43 @@
   }
   @keyframes mysteryPulse{0%,100%{opacity:.4;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
 
+  /* 오른쪽 위 고둥 메뉴 */
+  .menu-toggle{
+    position:fixed;top:16px;right:16px;z-index:20;
+    width:30px;height:30px;padding:4px;
+    background:rgba(10,10,10,.6);border:1px solid #33422b;border-radius:6px;
+    cursor:pointer;-webkit-tap-highlight-color:transparent;
+  }
+  .menu-toggle:focus-visible{outline:2px solid var(--lcd-light);outline-offset:2px}
+  .menu-icon{
+    display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+    width:100%;height:100%;
+  }
+  .menu-icon .px.A{background:var(--lcd-light)}
+  .menu-icon .px.B{background:#3a4a2e}
+  .menu-icon .px.C{background:var(--lcd-dark)}
+  .menu-icon .px.dot{background:transparent}
+
+  .menu-panel{
+    position:fixed;top:52px;right:16px;z-index:20;
+    width:min(220px,60vw);
+    background:#0d130a;border:1px solid #33422b;border-radius:8px;
+    padding:14px;
+    font-family:'Courier New',monospace;font-size:11px;color:#8fa07a;
+    line-height:1.6;
+    opacity:0;transform:translateY(-6px);pointer-events:none;
+    transition:opacity .2s ease, transform .2s ease;
+  }
+  .menu-panel.open{opacity:1;transform:none;pointer-events:auto}
+  .menu-panel p{margin-bottom:10px}
+  .sound-toggle{
+    width:100%;font-family:inherit;font-size:11px;
+    background:transparent;color:var(--lcd-light);
+    border:1px solid #33422b;border-radius:5px;
+    padding:7px 8px;cursor:pointer;text-align:left;
+  }
+  .sound-toggle:hover{border-color:var(--lcd-light)}
+
   @media (prefers-reduced-motion: reduce){
     .device.listening .sprite-grid{animation:none}
     .prompt .cursor,.answer .caret{animation:none}
@@ -224,6 +261,14 @@
 </style>
 </head>
 <body>
+  <button class="menu-toggle" id="menuToggle" aria-label="메뉴" aria-expanded="false">
+    <div class="menu-icon" id="menuIcon"></div>
+  </button>
+  <div class="menu-panel" id="menuPanel">
+    <p>이 페이지는 우연히 발견된 것입니다.<br>소라고동은 250가지가 넘는 답을 알고 있습니다.</p>
+    <button class="sound-toggle" id="soundToggle" type="button">🔊 사운드 켜짐</button>
+  </div>
+
   <p class="prompt">&gt; secret_oracle.exe<span class="cursor">_</span></p>
 
   <div class="device" id="device" role="button" tabindex="0" aria-label="소라고동 누르기">
@@ -451,7 +496,47 @@
     }, 3600);
   }
 
+  // 오른쪽 위 고둥 메뉴 아이콘 (8x8 미니 픽셀)
+  const MENU_ICON = [
+    "........",
+    "...AA...",
+    "..ABBA..",
+    ".ABBBBA.",
+    ".ABCCBA.",
+    ".ABBBBA.",
+    "..ABBA..",
+    "...AA..."
+  ];
+  const menuIconEl = document.getElementById('menuIcon');
+  MENU_ICON.forEach(row=>{
+    row.split('').forEach(ch=>{
+      const d = document.createElement('div');
+      d.className = 'px ' + (ch === '.' ? 'dot' : ch);
+      menuIconEl.appendChild(d);
+    });
+  });
+
+  const menuToggle = document.getElementById('menuToggle');
+  const menuPanel = document.getElementById('menuPanel');
+  const soundToggle = document.getElementById('soundToggle');
+  menuToggle.addEventListener('click', function(){
+    const open = menuPanel.classList.toggle('open');
+    menuToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  document.addEventListener('click', function(e){
+    if(!menuPanel.classList.contains('open')) return;
+    if(!menuPanel.contains(e.target) && !menuToggle.contains(e.target)){
+      menuPanel.classList.remove('open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    }
+  });
+  soundToggle.addEventListener('click', function(){
+    soundEnabled = !soundEnabled;
+    soundToggle.textContent = soundEnabled ? '🔊 사운드 켜짐' : '🔇 사운드 꺼짐';
+  });
+
   // 8비트 효과음 (Web Audio, 외부 파일 없음)
+  let soundEnabled = true;
   let audioCtx = null;
   function ensureAudio(){
     if(!audioCtx){
@@ -463,6 +548,7 @@
     return audioCtx;
   }
   function beep(freq, dur, type, gainVal, delay){
+    if(!soundEnabled) return;
     const ctx = ensureAudio();
     if(!ctx) return;
     const t0 = ctx.currentTime + (delay || 0);
