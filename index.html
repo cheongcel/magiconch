@@ -16,6 +16,11 @@
 <meta property="og:image" content="/icon-512.png">
 <meta property="og:type" content="website">
 <meta name="theme-color" content="#2c2d27">
+<link rel="manifest" href="/manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="소라고동">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" media="print" onload="this.media='all'">
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
@@ -861,6 +866,12 @@
     setTimeout(()=>{ statusEl.textContent = prev === '이미지 저장됨' ? DEFAULT_STATUS : prev; }, 1400);
   }
   shareBtn.addEventListener('click', shareAnswer);
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', ()=>{
+      navigator.serviceWorker.register('/sw.js').catch(()=>{});
+    });
+  }
 })();
 </script>
 </body>
