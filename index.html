@@ -9,7 +9,7 @@
 <noscript><link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet"></noscript>
 <style>
   :root{
-    --bg0:#0a0a0a;
+    --bg0:#2c2d27;
     --lcd-lightest:#9bbc0f;
     --lcd-light:#8bac0f;
     --lcd-dark:#306230;
@@ -50,14 +50,13 @@
   body::before{
     content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
     background:repeating-linear-gradient(
-      to bottom, rgba(255,255,255,.02) 0px, rgba(255,255,255,.02) 1px,
-      transparent 1px, transparent 3px
+      to bottom, rgba(255,255,255,.07) 0px, rgba(255,255,255,.07) 1px,
+      rgba(0,0,0,.16) 1px, rgba(0,0,0,.16) 4px
     );
-    mix-blend-mode:overlay;
   }
   body::after{
     content:"";position:fixed;inset:0;pointer-events:none;z-index:5;
-    background:radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.55) 100%);
+    background:radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,.3) 100%);
   }
 
   .prompt{font-size:10px;letter-spacing:.02em;color:#556347;display:flex;align-items:center;gap:2px}
