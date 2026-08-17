@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "dev.yoossi.magiconch.twa",
+        "sha256_cert_fingerprints": ["59:7B:77:EA:E0:0A:CE:41:0F:26:A6:0B:E3:CD:B5:BE:6F:47:EA:5A:87:78:FC:01:AB:83:57:E9:27:B0:A6:C9"]
+      }
+    }]
